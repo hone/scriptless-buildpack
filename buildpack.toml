@@ -1,0 +1,7 @@
+[buildpack]
+id = "hone/scriptless-buildpack"
+version = "0.1.0"
+name = "Scriptless Buildpack"
+
+[[stacks]]
+id = "heroku-18"

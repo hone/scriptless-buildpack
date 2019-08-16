@@ -1,0 +1,20 @@
+[package]
+name = "scriptless-buildpack"
+version = "0.1.0"
+authors = ["Terence Lee <hone02@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "bin-build"
+path = "src/bin/build.rs"
+
+[dependencies]
+failure = "0.1.5"
+libbuildpack = { path = "../libbuildpack.rs" }
+itertools = "0.8.0"
+serde = "1.0.98"
+serde_derive = "1.0.98"
+shell-escape = "0.1.4"
+structopt = "0.2.10"
+tempdir = "0.3.7"
+toml = "0.5"
