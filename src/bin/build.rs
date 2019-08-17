@@ -1,11 +1,7 @@
 use failure::Error;
 use libbuildpack::Build;
 use scriptless_buildpack::buildpack::Scriptless;
-use std::{
-    fs,
-    path::PathBuf,
-    process::{Command, Stdio},
-};
+use std::{fs, path::PathBuf};
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
@@ -20,6 +16,7 @@ struct Cli {
 
 fn main() -> Result<(), Error> {
     let args = Cli::from_args();
+    let args_array = [&args.layers, &args.platform, &args.plan];
 
     let mut build = Build::new(&args.layers, &args.platform, &args.plan)?;
     // scratch directory
@@ -27,14 +24,10 @@ fn main() -> Result<(), Error> {
 
     let scriptless = Scriptless::load_toml()?;
     if let Some(build_script) = scriptless.buildpack.build {
-        for run_script in build_script.run {
-            let args_string = format!("-c {}", run_script);
-            let args = args_string.split_ascii_whitespace();
-            let mut cmd = Command::new("sh")
-                .args(args)
-                .stdout(Stdio::inherit())
-                .stderr(Stdio::inherit())
-                .spawn()?;
+        if !build_script.run.is_empty() {
+            println!("Running build.run Script");
+
+            let mut cmd = build_script.run.execute(&args_array)?;
 
             let status = cmd.wait()?;
             if !status.success() {
@@ -74,16 +67,9 @@ fn main() -> Result<(), Error> {
 
             // TODO only run if metadata hasn't changed
             if !layer_toml.run.is_empty() {
-                println!("Running Layer Script:");
+                println!("Running Layer Script: {}", layer_toml.id);
 
-                let layer_run_script_path = layer_tmpdir.join("run.sh");
-                fs::write(&layer_run_script_path, layer_toml.run.join("\n"))?;
-                let mut cmd = Command::new("bash")
-                    .arg(&layer_run_script_path)
-                    .arg(&args.layers)
-                    .stdout(Stdio::inherit())
-                    .stderr(Stdio::inherit())
-                    .spawn()?;
+                let mut cmd = layer_toml.run.execute(&args_array)?;
 
                 let status = cmd.wait()?;
                 if !status.success() {
