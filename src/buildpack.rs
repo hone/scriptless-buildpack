@@ -61,6 +61,16 @@ pub struct Layer {
     pub run: Run,
 }
 
+impl Layer {
+    pub fn should_rebuild(&self, cache: bool, metadata: &Map<String, toml::Value>) -> bool {
+        if cache && &self.metadata == metadata {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 #[derive(Deserialize)]
 pub struct Profile {
     pub name: String,

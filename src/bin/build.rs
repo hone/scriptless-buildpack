@@ -41,32 +41,11 @@ fn main() -> Result<(), Error> {
             fs::create_dir_all(&layer_tmpdir)?;
 
             let mut layer = build.layers.add(&layer_toml.id)?;
-            layer.config(|c| {
-                c.cache = layer_toml.cache;
-                c.launch = layer_toml.launch;
-                c.build = layer_toml.build;
-            })?;
+            layer.read_metadata()?;
 
-            if !layer_toml.metadata.is_empty() {
-                for (key, value) in layer_toml.metadata.into_iter() {
-                    layer.config.metadata.insert(key, value);
-                }
-                layer.write_metadata()?;
-            }
-
-            if !layer_toml.env.is_empty() {
-                for (key, value) in layer_toml.env {
-                    layer.envs.shared.append.set_var(key, value);
-                }
-                layer.write_envs()?;
-            }
-
-            for profile in layer_toml.profile {
-                layer.write_profile_d(&profile.name, &profile.script)?;
-            }
-
-            // TODO only run if metadata hasn't changed
-            if !layer_toml.run.is_empty() {
+            if !layer_toml.run.is_empty()
+                && !layer_toml.should_rebuild(layer.config.cache, &layer.config.metadata)
+            {
                 println!("Running Layer Script: {}", layer_toml.id);
 
                 let mut cmd = layer_toml.run.execute(&args_array)?;
@@ -76,6 +55,31 @@ fn main() -> Result<(), Error> {
                     println!("Failed to run layers command");
                     std::process::exit(build.fail(status.code().unwrap()));
                 }
+            }
+
+            layer.config(|c| {
+                c.cache = layer_toml.cache;
+                c.launch = layer_toml.launch;
+                c.build = layer_toml.build;
+            })?;
+
+            if !layer_toml.metadata.is_empty() {
+                // partially consumes scriptless layer toml
+                for (key, value) in layer_toml.metadata.into_iter() {
+                    layer.config.metadata.insert(key, value);
+                }
+                layer.write_metadata()?;
+            }
+
+            if !layer_toml.env.is_empty() {
+                for (key, value) in &layer_toml.env {
+                    layer.envs.shared.append.set_var(key, value);
+                }
+                layer.write_envs()?;
+            }
+
+            for profile in &layer_toml.profile {
+                layer.write_profile_d(&profile.name, &profile.script)?;
             }
 
             for process in &build_script.launch.processes {
