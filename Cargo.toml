@@ -10,7 +10,7 @@ path = "src/bin/build.rs"
 
 [dependencies]
 failure = "0.1.5"
-libbuildpack = { path = "../libbuildpack.rs" }
+libbuildpack = { git = "https://github.com/hone/libbuildpack.rs.git" }
 itertools = "0.8.0"
 serde = "1.0.98"
 serde_derive = "1.0.98"
