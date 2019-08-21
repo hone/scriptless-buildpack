@@ -1,5 +1,5 @@
 [buildpack]
-id = "hone/scriptless-buildpack"
+id = "hone/scriptless"
 version = "0.1.0"
 name = "Scriptless Buildpack"
 
